@@ -1,0 +1,35 @@
+{
+  "name": "DbiDevelopmentTest",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "Shared": {
+        "$path": "src/shared"
+      },
+      "Packages": {
+        "$path": "Packages"
+      }
+    },
+    "ReplicatedFirst": {
+      "$className": "ReplicatedFirst",
+      "$path": "src/ReplicatedFirst"
+    },
+    "ServerScriptService": {
+      "Server": {
+        "$path": "src/server"
+      }
+    },
+    "StarterPlayer": {
+      "StarterPlayerScripts": {
+        "Client": {
+          "$path": "src/client"
+        }
+      }
+    },
+    "ServerStorage": {
+      "Scripts": {
+        "$path": "src/ServerStorage"
+      }
+    }
+  }
+}

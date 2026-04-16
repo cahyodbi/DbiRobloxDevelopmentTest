@@ -1,0 +1,38 @@
+return table.freeze({
+	-- Defines child-parent tag relations.
+	-- When a player collects a specific fossil, quests targeting "Fossil" will also receive progress.
+
+	-- Fossils
+	{ Child = "Branchinecta Fossil", Parent = "Fossil" },
+	{ Child = "Test Giant Grasshopper Fossil", Parent = "Fossil" },
+	{ Child = "Ancient Termite Nest Fossil", Parent = "Fossil" },
+	{ Child = "Freshwater Crab Fossil", Parent = "Fossil" },
+	{ Child = "Pleistocene Horse Tooth", Parent = "Fossil" },
+	{ Child = "Ornithomimus Leg Bone", Parent = "Fossil" },
+	{ Child = "Struthiomimus Jaw Bone", Parent = "Fossil" },
+	{ Child = "Tenontosaurus Rib Bone", Parent = "Fossil" },
+	{ Child = "Dire Wolf Skull", Parent = "Fossil" },
+	{ Child = "Megarachne Fossil", Parent = "Fossil" },
+	{ Child = "Bison Antiquus Horn", Parent = "Fossil" },
+	{ Child = "Varanus Priscus Vertebra", Parent = "Fossil" },
+	{ Child = "Phorusrhacos Beak Fossil", Parent = "Fossil" },
+	{ Child = "Titanis Leg Bone", Parent = "Fossil" },
+	{ Child = "Argentavis Wing Bone", Parent = "Fossil" },
+	{ Child = "Pachycephalosaurus Skull", Parent = "Fossil" },
+	{ Child = "Ankylosaurus Tail Bone", Parent = "Fossil" },
+	{ Child = "Megatherium Claw", Parent = "Fossil" },
+	{ Child = "Smilodon Saber Tooth", Parent = "Fossil" },
+	{ Child = "Glyptodon Armor Plate", Parent = "Fossil" },
+	{ Child = "Mammoth Skull", Parent = "Fossil" },
+	{ Child = "Gastornis Skull", Parent = "Fossil" },
+	{ Child = "Tyrannosaurus Rex Head", Parent = "Fossil" },
+	{ Child = "Tyrannosaurus Rex Body", Parent = "Fossil" },
+	{ Child = "Tyrannosaurus Rex Left Leg", Parent = "Fossil" },
+	{ Child = "Tyrannosaurus Rex Right Leg", Parent = "Fossil" },
+	{ Child = "Tyrannosaurus Rex Tail", Parent = "Fossil" },
+	{ Child = "Apatosaurus Head", Parent = "Fossil" },
+	{ Child = "Apatosaurus Body", Parent = "Fossil" },
+	{ Child = "Apatosaurus Tail", Parent = "Fossil" },
+	{ Child = "Apatosaurus Front Leg", Parent = "Fossil" },
+	{ Child = "Apatosaurus Back Leg", Parent = "Fossil" },
+})

@@ -1,0 +1,22 @@
+{
+    "name": "Development",
+    "description": "Default development environment (DbiDevelopmentTest)",
+    "icon": "🛠️",
+    "createdAt": "2026-04-16T19:58:00.000Z",
+    "path": "{Application.projectRootPath}/Environments/Development",
+    "items": [
+        "src",
+        "default.project.json"
+    ],
+    "universeId": "10042917760",
+    "places": [
+        {
+            "id": 115991338370709,
+            "name": "DBI Development Test",
+            "description": ""
+        }
+    ],
+    "updatedAt": "2026-04-16T13:05:17.191Z",
+    "trackerUrl": "",
+    "profileId": "1776343893784"
+}

@@ -1,0 +1,19 @@
+{
+    "activeEnvironment": {
+        "type": "environment",
+        "name": "Development",
+        "path": "{Application.projectRootPath}/Environments/Development",
+        "timestamp": "2026-04-16T19:58:00.000Z"
+    },
+    "recentPlaces": [
+        {
+            "name": "Roblox Place 115991338370709",
+            "path": "{Application.projectRootPath}/Environments/Development",
+            "icon": "🎮",
+            "timestamp": "2026-04-16T16:19:13.061Z",
+            "type": "place",
+            "placeId": "115991338370709"
+        }
+    ],
+    "updatedAt": "2026-04-16T16:19:13.062Z"
+}
