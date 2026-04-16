@@ -4,18 +4,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local DISharedScope = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("DISharedScope"):WaitForChild("DISharedScope"))
 local DIClientScope = require(script.Parent.Parent.Parent:WaitForChild("DIClientScope"):WaitForChild("DIClientScope"))
 
--- 2. Ambil Engine & Framework melalui Get
-local Players = DISharedScope:Get("Engine", "Players")
 local Knit = DISharedScope:Get("Modules", "Knit")
-local UserInputService = DISharedScope:Get("Engine", "UserInputService")
-
--- 3. Ambil Interfaces (Kontrak) melalui Get
-local IHealthUtility = DISharedScope:Get("Interfaces", "IHealthUtility")
-local IHealthStatsView = DIClientScope:Get("Interfaces", "IHealthStatsView")
-
--- 4. Ambil Utility (Perantara ke Health module) melalui Get
-local HealthUtility = DISharedScope:Get("Utilities", "HealthUtility")
-local HealthStatsView = DIClientScope:Get("Views", "HealthStatsView")
 
 -- Local cache untuk referensi UI Fill
 local healthStatsFill: GuiObject
@@ -24,20 +13,44 @@ local HealthStatController = Knit.CreateController {
 	Name = "HealthStatController",
 }
 
-function HealthStatController:KnitStart()
-	print("HEALTH STAT CONTROLLER START")
+function HealthStatController:KnitInit()
+	-- 2. Ambil Engine & Framework melalui Get
+	self._players = DISharedScope:Get("Engine", "Players")
+	self._userInputService = DISharedScope:Get("Engine", "UserInputService")
+
+	-- 3. Ambil Interfaces (Kontrak) melalui Get
+	self._IHealthStatsView = DIClientScope:Get("Interfaces", "IHealthStatsView")
+
+	-- 4. Ambil Implementasi & Service
+	self._HealthStatsViewClass = DIClientScope:Get("Views", "HealthStatsView")
+	self._HealthService = Knit.GetService("HealthService")
 	
+	-- Cache untuk ratio (diupdate dari Server)
+	self._currentHealthRatio = 1
+
 	-- Ambil UI secara manual di Controller
-	local player = Players.LocalPlayer
+	local player = self._players.LocalPlayer
 	local playerGui = player:WaitForChild("PlayerGui")
 	local mainGui = playerGui:WaitForChild("MainGui", 10)
 	healthStatsFill = mainGui:WaitForChild("HealthBarBG"):WaitForChild("Fill")
+end
+
+function HealthStatController:KnitStart()
+	print("HEALTH STAT CONTROLLER START")
 	
-	self._healthView = (HealthStatsView.new() :: any) :: IHealthStatsView.IHealthStatsView
-	self._healthUtility = (HealthUtility :: any) :: IHealthUtility.IHealthUtility
+	-- Inisialisasi View
+	-- Kita gunakan Type dari interface untuk mengendalikan (contracting) instance view
+	local IHealthStatsView = self._IHealthStatsView
+	self._healthView = (self._HealthStatsViewClass.new() :: any) :: IHealthStatsView.IHealthStatsView
 	
-	-- [DUMMY INPUT] P = Heal 10 | L = Damage 10
-	UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	-- DENGARKAN perubahan dari Server (Knit Property)
+	self._HealthService.HealthChanged:Observe(function(newRatio)
+		self._currentHealthRatio = newRatio
+		self:_updateUI()
+	end)
+	
+	-- [DUMMY INPUT] Kirim permintaan ke Server
+	self._userInputService.InputBegan:Connect(function(input, gameProcessed)
 		if gameProcessed then return end
 		
 		if input.KeyCode == Enum.KeyCode.P then
@@ -46,36 +59,23 @@ function HealthStatController:KnitStart()
 			self:GetDamage(10)
 		end
 	end)
-	
-	self:_updateUI()
 end
 
--- Fungsi untuk menerima Damage
+-- Fungsi untuk mengirim permintaan Damage ke Server
 function HealthStatController:GetDamage(damage: number)
-	if not self._healthUtility then return end
-	
-	self._healthUtility:TakeDamage(damage)
-	self:_updateUI()
+	self._HealthService:RequestDamage(damage)
 end
 
--- Fungsi untuk menerima Heal
+-- Fungsi untuk mengirim permintaan Heal ke Server
 function HealthStatController:GetHeal(heal: number)
-	if not self._healthUtility then return end
-	
-	self._healthUtility:Heal(heal)
-	self:_updateUI()
+	self._HealthService:RequestHeal(heal)
 end
 
 function HealthStatController:_updateUI()
-	if not self._healthView or not healthStatsFill or not self._healthUtility then 
-		print("DEBUG: _updateUI aborted. States:", 
-			"View:", self._healthView ~= nil, 
-			"Fill:", healthStatsFill ~= nil, 
-			"Utility:", self._healthUtility ~= nil)
-		return 
-	end
+	if not self._healthView or not healthStatsFill then return end
 	
-	self._healthView:SetHealthBar(healthStatsFill, self._healthUtility:GetHealthRatio())
+	-- Gunakan ratio yang sudah disinkronkan dari Server
+	self._healthView:SetHealthBar(healthStatsFill, self._currentHealthRatio)
 end
 
 return HealthStatController

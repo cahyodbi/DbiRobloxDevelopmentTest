@@ -1,4 +1,5 @@
-local DISharedScope = require(script.Parent.Parent.Parent.DISharedScope.DISharedScope)
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local DISharedScope = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("DISharedScope"):WaitForChild("DISharedScope"))
 
 local Stats = DISharedScope:Get("Data", "StatDatas")
 local IHealth = DISharedScope:Get("Interfaces", "IHealth")
@@ -6,12 +7,12 @@ local IHealth = DISharedScope:Get("Interfaces", "IHealth")
 local Health = {}
 Health.__index = Health
 
-function Health.new(): IHealth.IHealth
+function Health.new(customHealth: number?, customMaxHealth: number?): IHealth.IHealth
 	local self = setmetatable({}, Health)
 	
-	-- Ambil nilai default dari Repository melalui DISharedScope Get
-	self._health = Stats.Health
-	self._maxHealth = Stats.MaxHealth
+	-- Ambil nilai default dari Repository, atau gunakan custom value jika ada
+	self._health = customHealth or Stats.Health
+	self._maxHealth = customMaxHealth or Stats.MaxHealth
 	
 	return (self :: any) :: IHealth.IHealth
 end

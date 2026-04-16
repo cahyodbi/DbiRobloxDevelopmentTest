@@ -14,6 +14,7 @@ DISharedScope.Engine = {
 	TweenService = game:GetService("TweenService"),
 	HttpService = game:GetService("HttpService"),
 	UserInputService = game:GetService("UserInputService"),
+	DataStoreService = game:GetService("DataStoreService"),
 }
 
 -- 2. Data Paths (Configs, Templates, Static Data)

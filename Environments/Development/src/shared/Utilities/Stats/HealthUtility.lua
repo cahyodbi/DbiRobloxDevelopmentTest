@@ -6,7 +6,8 @@
 	Controller tidak perlu memanggil .new() — cukup gunakan langsung hasil dari :Get().
 ]=]
 
-local DISharedScope = require(script.Parent.Parent.Parent.DISharedScope.DISharedScope)
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local DISharedScope = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("DISharedScope"):WaitForChild("DISharedScope"))
 
 local IHealthUtility = DISharedScope:Get("Interfaces", "IHealthUtility")
 local Health = DISharedScope:Get("Modules", "Health")
