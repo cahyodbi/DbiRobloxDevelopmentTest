@@ -4,6 +4,8 @@
 	Singleton utility yang menjadi perantara antara Controller dan Health module.
 	Health module di-instantiate sekali secara internal saat module ini di-load.
 	Selaras dengan pola DI di Controller dan Service.
+
+	NOTES: Jika DataStore sudah aktif harusnya UTILITY ini tidak perlu sih,
 ]=]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
