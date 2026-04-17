@@ -1,33 +1,35 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local DI = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("DI"))
+local DISharedScope = DI.Shared
+local DIClientScope = DI.Client
+local Knit = DISharedScope.Knit
 
--- 1. Ambil DI Scopes (Wajib ada agar :Get bisa jalan)
-local DISharedScope = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("DISharedScope"):WaitForChild("DISharedScope"))
-local DIClientScope = require(script.Parent.Parent.Parent:WaitForChild("DIClientScope"):WaitForChild("DIClientScope"))
-
-local Knit = DISharedScope:Get("Modules", "Knit")
-
--- Local cache untuk referensi UI Fill
+--objects
 local healthStatsFill: GuiObject
 
 local HealthStatController = Knit.CreateController {
 	Name = "HealthStatController",
 }
 
+--#region Knit
 function HealthStatController:KnitInit()
-	-- 2. Ambil Engine & Framework melalui Get
-	self._players = DISharedScope:Get("Engine", "Players")
-	self._userInputService = DISharedScope:Get("Engine", "UserInputService")
+	--Engine
+	self._players = DISharedScope.Players
+	self._userInputService = DISharedScope.UserInputService
+	
+	--Services
+	self._healthService = Knit.GetService("HealthService")
 
-	-- 3. Ambil Interfaces (Kontrak) melalui Get
-	self._IHealthStatsView = DIClientScope:Get("Interfaces", "IHealthStatsView")
+	--Views/Modules
+	self._healthStatsView = DIClientScope.HealthStatsView
 
-	-- 4. Ambil Implementasi & Service
-	self._HealthStatsViewClass = DIClientScope:Get("Views", "HealthStatsView")
-	self._HealthService = Knit.GetService("HealthService")
+	--Interfaces
+	self._healthViewContract = DIClientScope.IHealthStatsView
 	
 	-- Cache untuk ratio (diupdate dari Server)
 	self._currentHealthRatio = 1
 
+	--Objects
 	-- Ambil UI secara manual di Controller
 	local player = self._players.LocalPlayer
 	local playerGui = player:WaitForChild("PlayerGui")
@@ -40,11 +42,11 @@ function HealthStatController:KnitStart()
 	
 	-- Inisialisasi View
 	-- Kita gunakan Type dari interface untuk mengendalikan (contracting) instance view
-	local IHealthStatsView = self._IHealthStatsView
-	self._healthView = (self._HealthStatsViewClass.new() :: any) :: IHealthStatsView.IHealthStatsView
+	local HealthViewContract = self._healthViewContract
+	self._healthView = (self._healthStatsView.new() :: any) :: HealthViewContract.IHealthStatsView
 	
 	-- DENGARKAN perubahan dari Server (Knit Property)
-	self._HealthService.HealthChanged:Observe(function(newRatio)
+	self._healthService.HealthChanged:Observe(function(newRatio)
 		self._currentHealthRatio = newRatio
 		self:_updateUI()
 	end)
@@ -60,15 +62,17 @@ function HealthStatController:KnitStart()
 		end
 	end)
 end
+--#endregion
 
+--#region Functions
 -- Fungsi untuk mengirim permintaan Damage ke Server
 function HealthStatController:GetDamage(damage: number)
-	self._HealthService:RequestDamage(damage)
+	self._healthService:RequestDamage(damage)
 end
 
 -- Fungsi untuk mengirim permintaan Heal ke Server
 function HealthStatController:GetHeal(heal: number)
-	self._HealthService:RequestHeal(heal)
+	self._healthService:RequestHeal(heal)
 end
 
 function HealthStatController:_updateUI()
@@ -77,5 +81,6 @@ function HealthStatController:_updateUI()
 	-- Gunakan ratio yang sudah disinkronkan dari Server
 	self._healthView:SetHealthBar(healthStatsFill, self._currentHealthRatio)
 end
+--#endregion
 
 return HealthStatController

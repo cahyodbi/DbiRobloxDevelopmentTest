@@ -1,9 +1,11 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local DI = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("DI"))
+local DISharedScope = DI.Shared
+local Knit = DISharedScope.Knit
 
--- 1. Ambil Scopes dan Framework dasar
-local DISharedScope = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("DISharedScope"):WaitForChild("DISharedScope"))
-local DIServerScope = require(script.Parent.Parent:WaitForChild("DIServerScope"):WaitForChild("DIServerScope"))
-local Knit = DISharedScope:Get("Modules", "Knit")
+-- DEPENDENCIES (Top-level for type accessibility)
+local Health = DISharedScope.Health
+local HealthContract = DISharedScope.IHealth
 
 -- DataStore Configuration
 local DATASTORE_NAME = "PlayerData_v1"
@@ -26,35 +28,54 @@ local HealthService = Knit.CreateService {
 function HealthService:KnitInit()
     print("[HealthService] Initializing...")
     
-    -- 2. Ambil Engine Services melalui DISharedScope
-    self._DataStoreService = DISharedScope:Get("Engine", "DataStoreService")
-    self._Players = DISharedScope:Get("Engine", "Players")
+    -- ENGINE
+    self._dataStoreService = DISharedScope.DataStoreService
+    self._players = DISharedScope.Players
     
-    -- 3. Ambil Logic & Interface melalui DISharedScope (Pindah dari Server ke Shared)
-    self._IHealth = DISharedScope:Get("Interfaces", "IHealth")
-    self._HealthClass = DISharedScope:Get("Modules", "Health")
-    
-    -- 4. Inisialisasi DataStore (Hanya jika diaktifkan)
+    -- SERVICES
     if IS_DATASTORE_ENABLED then
-        self._playerDataStore = self._DataStoreService:GetDataStore(DATASTORE_NAME)
+        self._playerDataStore = self._dataStoreService:GetDataStore(DATASTORE_NAME)
+    end
+
+    -- INTERFACES & MODULES (References keep for runtime convenience)
+    self._healthContract = HealthContract
+    self._healthStats = Health
+
+    self._playerHealthInstances = {}
+    self._playerDataStatus = {} -- Track load status for validation
+end
+
+-- Validasi aksi (terutama jika DataStore diaktifkan)
+-- Mungkin ini harusnya berupa policy?
+function HealthService:_validatePlayerAction(player: Player): boolean
+    -- 1. Cek apakah instance health ada
+    local healthObj = self._playerHealthInstances[player]
+    if not healthObj then return false end
+    
+    -- 2. Jika DataStore aktif, cek apakah data sudah sukses di-load
+    if IS_DATASTORE_ENABLED then
+        local status = self._playerDataStatus[player]
+        if not status or not status.Loaded then
+            warn(string.format("[HealthService] Action blocked for %s: Data not loaded yet.", player.Name))
+            return false
+        end
     end
     
-    -- Table untuk menyimpan instance Health per player
-    self._playerHealthInstances = {}
+    return true
 end
 
 function HealthService:KnitStart()
     print("[HealthService] Started")
     
-    self._Players.PlayerAdded:Connect(function(player)
+    self._players.PlayerAdded:Connect(function(player)
         self:OnPlayerAdded(player)
     end)
 
-    self._Players.PlayerRemoving:Connect(function(player)
+    self._players.PlayerRemoving:Connect(function(player)
         self:OnPlayerRemoving(player)
     end)
     
-    for _, player in ipairs(self._Players:GetPlayers()) do
+    for _, player in ipairs(self._players:GetPlayers()) do
         task.spawn(function()
             self:OnPlayerAdded(player)
         end)
@@ -63,6 +84,7 @@ end
 
 function HealthService:OnPlayerAdded(player: Player)
     local initialHealth, initialMaxHealth
+    local loadSuccess = false
     
     if IS_DATASTORE_ENABLED then
         local userId = player.UserId
@@ -83,16 +105,20 @@ function HealthService:OnPlayerAdded(player: Player)
             initialHealth = data.Health
             initialMaxHealth = data.MaxHealth
             print(string.format("[HealthService] Loaded data for %s: %d/%d", player.Name, initialHealth, initialMaxHealth))
+            loadSuccess = true
         end
+    else
+        loadSuccess = true -- Bypassed DataStore
     end
+
+    self._playerDataStatus[player] = { Loaded = loadSuccess }
 
     if not initialHealth then
         print(string.format("[HealthService] Using default stats for %s.", player.Name))
     end
     
-    -- Buat instance Health baru dengan Casting ke Interface (Contract)
-    local IHealth = self._IHealth
-    local healthObj = (self._HealthClass.new(initialHealth, initialMaxHealth) :: any) :: IHealth.IHealth
+    -- Ganti cast ke variabel lokal untuk menghindari error syntax Luau
+    local healthObj = (Health.new(initialHealth, initialMaxHealth) :: any) :: HealthContract.IHealth
     self._playerHealthInstances[player] = healthObj
     
     self:_syncHealthToClient(player)
@@ -126,22 +152,23 @@ function HealthService:OnPlayerRemoving(player: Player)
     end
     
     self._playerHealthInstances[player] = nil
+    self._playerDataStatus[player] = nil
 end
 
 function HealthService:DamagePlayer(player: Player, amount: number)
+    if not self:_validatePlayerAction(player) then return end
+    
     local healthObj = self._playerHealthInstances[player]
-    if healthObj then
-        healthObj:DecreaseHealth(amount, healthObj._maxHealth)
-        self:_syncHealthToClient(player)
-    end
+    healthObj:DecreaseHealth(amount, healthObj._maxHealth)
+    self:_syncHealthToClient(player)
 end
 
 function HealthService:HealPlayer(player: Player, amount: number)
+    if not self:_validatePlayerAction(player) then return end
+    
     local healthObj = self._playerHealthInstances[player]
-    if healthObj then
-        healthObj:IncreaseHealth(amount, healthObj._maxHealth)
-        self:_syncHealthToClient(player)
-    end
+    healthObj:IncreaseHealth(amount, healthObj._maxHealth)
+    self:_syncHealthToClient(player)
 end
 
 function HealthService:_syncHealthToClient(player: Player)

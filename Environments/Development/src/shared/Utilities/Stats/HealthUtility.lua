@@ -3,44 +3,48 @@
 	
 	Singleton utility yang menjadi perantara antara Controller dan Health module.
 	Health module di-instantiate sekali secara internal saat module ini di-load.
-	Controller tidak perlu memanggil .new() — cukup gunakan langsung hasil dari :Get().
+	Selaras dengan pola DI di Controller dan Service.
 ]=]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local DISharedScope = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("DISharedScope"):WaitForChild("DISharedScope"))
+local DI = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("DI"))
+local DISharedScope = DI.Shared
 
-local IHealthUtility = DISharedScope:Get("Interfaces", "IHealthUtility")
-local Health = DISharedScope:Get("Modules", "Health")
+-- DEPENDENCIES (Resolved via DI)
+local HealthUtilityContract = DISharedScope.IHealthUtility
+local Health = DISharedScope.Health
 
--- Singleton: Health di-instantiate sekali di sini, bukan di Controller
-local _healthModule = Health.new()
+-- Singleton instance
+local HealthInstance = Health.new()
 
 local HealthUtility = {}
 
+--#region Functions
 -- Mengembalikan nilai health saat ini
 function HealthUtility:GetHealth(): number
-	return _healthModule._health
+	return HealthInstance._health
 end
 
 -- Mengembalikan nilai max health
 function HealthUtility:GetMaxHealth(): number
-	return _healthModule._maxHealth
+	return HealthInstance._maxHealth
 end
 
--- Mengurangi health sebesar damage (kalkulasi dilakukan di dalam Health module)
+-- Mengurangi health sebesar damage
 function HealthUtility:TakeDamage(damage: number)
-	_healthModule:DecreaseHealth(damage, _healthModule._maxHealth)
+	HealthInstance:DecreaseHealth(damage, HealthInstance._maxHealth)
 end
 
--- Menambah health sebesar amount (kalkulasi dilakukan di dalam Health module)
+-- Menambah health sebesar amount
 function HealthUtility:Heal(amount: number)
-	_healthModule:IncreaseHealth(amount, _healthModule._maxHealth)
+	HealthInstance:IncreaseHealth(amount, HealthInstance._maxHealth)
 end
 
 -- Mengembalikan rasio health saat ini (0.0 - 1.0) untuk keperluan UI
 function HealthUtility:GetHealthRatio(): number
-	return _healthModule._health / _healthModule._maxHealth
+	if HealthInstance._maxHealth == 0 then return 0 end
+	return HealthInstance._health / HealthInstance._maxHealth
 end
+--#endregion
 
-return (HealthUtility :: any) :: IHealthUtility.IHealthUtility
-
+return (HealthUtility :: any) :: HealthUtilityContract.IHealthUtility
